@@ -1,22 +1,85 @@
 @import "tailwindcss";
 
+/* ======================================================
+   LIGHT MODE
+   ====================================================== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Main surfaces */
+  --background: #f5f1eb;
+  --foreground: #1f2d1f;
+
+  --surface: #ffffff;
+  --surface-2: #d9d2c8;
+
+  /* Borders */
+  --border: #d9d2c8;
+
+  /* Text */
+  --muted: #5a3e2b;
+  --muted-2: #7c8f6a;
+
+  /* Brand */
+  --primary: #1f2d1f;
+  --primary-hover: #3e5c3b;
+
+  /* Accent */
+  --accent: #7c8f6a;
+  --accent-foreground: #1f2d1f;
+
+  --hero-text: #ffffff;
 }
 
+/* ======================================================
+   DARK MODE
+   ====================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1f2d1f;
+    --foreground: #f5f1eb;
+
+    --surface: #2a3728;
+    --surface-2: #3e5c3b;
+
+    --border: #4b5e49;
+
+    --muted: #d9d2c8;
+    --muted-2: #aeb8a5;
+
+    --primary: #7c8f6a;
+    --primary-hover: #93a282;
+
+    --accent: #5a3e2b;
+    --accent-foreground: #f5f1eb;
+
+    --hero-text: #ffffff;
+  }
+}
+
+/* ======================================================
+   TAILWIND TOKENS
+   ====================================================== */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+
+  --color-border: var(--border);
+
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-hero-text: var(--hero-text);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
