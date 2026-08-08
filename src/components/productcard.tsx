@@ -1,32 +1,59 @@
 import { Heart } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
-interface Props {
-  title: string;
-  price: string;
-  image: string;
+import { Product } from "@/data/products";
+
+interface ProductCardProps {
+  product: Product;
 }
 
-export default function ProductCard({ title, price, image }: Props) {
+export default function ProductCard({
+  product,
+}: ProductCardProps) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface text-foreground shadow-sm transition hover:shadow-md">
-      <div className="relative">
-        <Image
-          src={image}
-          width={250}
-          height={320}
-          alt={title}
-          className="h-72 w-full object-cover"
-        />
-        <button className="absolute right-3 top-3 rounded-full border border-border bg-surface p-2 text-foreground shadow">
-          <Heart size={16} />
-        </button>
-      </div>
+    <Link
+      href={`/products/${product.id}`}
+      className="group block"
+    >
+      <div className="overflow-hidden rounded-lg border border-border bg-surface transition-shadow hover:shadow-md">
+        {/* Product Image */}
+        <div className="relative aspect-square overflow-hidden bg-surface-secondary">
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            className="object-cover transition duration-300 group-hover:scale-105"
+          />
 
-      <div className="p-4">
-        <h3 className="font-medium text-foreground">{title}</h3>
-        <p className="mt-2 text-muted">{price}</p>
+          {/* Wishlist Icon */}
+          <div
+            aria-label={`Save ${product.name} to wishlist`}
+            className="absolute right-3 top-3 rounded-full bg-surface p-2 text-foreground shadow-sm"
+          >
+            <Heart size={17} strokeWidth={1.8} />
+          </div>
+        </div>
+
+        {/* Product Information */}
+        <div className="p-4">
+          <p className="text-xs text-muted">
+            {product.category}
+          </p>
+
+          <h3 className="mt-1 font-medium text-foreground">
+            {product.name}
+          </h3>
+
+          <p className="mt-2 font-semibold text-foreground">
+            ${product.price.toLocaleString()}
+          </p>
+
+          <p className="mt-1 text-xs text-muted">
+            {product.condition} condition
+          </p>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
