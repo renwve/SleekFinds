@@ -40,7 +40,6 @@ export const products: Product[] = [
       era: "1970s",
     },
   },
-
   {
     id: "vintage-leather-briefcase",
     name: "Vintage Leather Briefcase",
@@ -62,7 +61,6 @@ export const products: Product[] = [
       era: "1980s",
     },
   },
-
   {
     id: "vintage-emerald-ring",
     name: "Vintage Emerald Signet",
@@ -84,7 +82,6 @@ export const products: Product[] = [
       era: "1960s",
     },
   },
-
   {
     id: "vintage-sunglasses",
     name: "1960s Gold Frame Sunglasses",
@@ -106,7 +103,6 @@ export const products: Product[] = [
       era: "1960s",
     },
   },
-
   {
     id: "vintage-pearl-necklace",
     name: "Natural Pearl Strand",

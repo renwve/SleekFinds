@@ -4,14 +4,15 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   ReactNode,
 } from "react";
-
 import { Product } from "@/data/products";
 
-interface CartItem {
+const CART_STORAGE_KEY = "sleekfinds-cart";
+const SAVED_STORAGE_KEY = "sleekfinds-saved";
+
+export interface CartItem {
   product: Product;
   quantity: number;
 }
@@ -19,141 +20,113 @@ interface CartItem {
 interface CartContextType {
   cartItems: CartItem[];
   savedItems: Product[];
-
+  subtotal: number;
+  total: number;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   increaseQuantity: (productId: string) => void;
   decreaseQuantity: (productId: string) => void;
-
   saveItem: (product: Product) => void;
   removeSavedItem: (productId: string) => void;
   moveSavedToCart: (product: Product) => void;
-
-  cartCount: number;
-  subtotal: number;
-  total: number;
+  isSaved: (productId: string) => boolean;
+  isInCart: (productId: string) => boolean;
 }
 
-const CartContext = createContext<CartContextType | undefined>(
-  undefined
-);
+const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [savedItems, setSavedItems] = useState<Product[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const storedCart = localStorage.getItem("sleekfinds-cart");
-    const storedSaved = localStorage.getItem("sleekfinds-saved");
+    try {
+      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+      const storedSaved = localStorage.getItem(SAVED_STORAGE_KEY);
 
-    if (storedCart) {
-      setCartItems(JSON.parse(storedCart));
-    }
+      if (storedCart) {
+        const parsedCart = JSON.parse(storedCart);
+        if (Array.isArray(parsedCart)) {
+          setCartItems(parsedCart);
+        }
+      }
 
-    if (storedSaved) {
-      setSavedItems(JSON.parse(storedSaved));
+      if (storedSaved) {
+        const parsedSaved = JSON.parse(storedSaved);
+        if (Array.isArray(parsedSaved)) {
+          setSavedItems(parsedSaved);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load cart data from localStorage:", error);
+    } finally {
+      setLoaded(true);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      "sleekfinds-cart",
-      JSON.stringify(cartItems)
-    );
-  }, [cartItems]);
+    if (!loaded) return;
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+    } catch (error) {
+      console.error("Failed to save cart to localStorage:", error);
+    }
+  }, [cartItems, loaded]);
 
   useEffect(() => {
-    localStorage.setItem(
-      "sleekfinds-saved",
-      JSON.stringify(savedItems)
-    );
-  }, [savedItems]);
+    if (!loaded) return;
+    try {
+      localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(savedItems));
+    } catch (error) {
+      console.error("Failed to save wishlist to localStorage:", error);
+    }
+  }, [savedItems, loaded]);
 
   function addToCart(product: Product) {
-    setCartItems((current) => {
-      const existing = current.find(
-        (item) => item.product.id === product.id
-      );
-
-      if (existing) {
-        return current.map((item) =>
-          item.product.id === product.id
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-              }
-            : item
+    setCartItems((currentItems) => {
+      const existingItem = currentItems.find((item) => item.product.id === product.id);
+      if (existingItem) {
+        return currentItems.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-
-      return [
-        ...current,
-        {
-          product,
-          quantity: 1,
-        },
-      ];
+      return [...currentItems, { product, quantity: 1 }];
     });
   }
 
   function removeFromCart(productId: string) {
-    setCartItems((current) =>
-      current.filter(
-        (item) => item.product.id !== productId
-      )
-    );
+    setCartItems((currentItems) => currentItems.filter((item) => item.product.id !== productId));
   }
 
   function increaseQuantity(productId: string) {
-    setCartItems((current) =>
-      current.map((item) =>
-        item.product.id === productId
-          ? {
-              ...item,
-              quantity: item.quantity + 1,
-            }
-          : item
+    setCartItems((currentItems) =>
+      currentItems.map((item) =>
+        item.product.id === productId ? { ...item, quantity: item.quantity + 1 } : item
       )
     );
   }
 
   function decreaseQuantity(productId: string) {
-    setCartItems((current) =>
-      current
+    setCartItems((currentItems) =>
+      currentItems
         .map((item) =>
-          item.product.id === productId
-            ? {
-                ...item,
-                quantity: item.quantity - 1,
-              }
-            : item
+          item.product.id === productId ? { ...item, quantity: item.quantity - 1 } : item
         )
         .filter((item) => item.quantity > 0)
     );
   }
 
   function saveItem(product: Product) {
-    setSavedItems((current) => {
-      const alreadySaved = current.some(
-        (item) => item.id === product.id
-      );
-
-      if (alreadySaved) {
-        return current;
-      }
-
-      return [...current, product];
+    setSavedItems((currentItems) => {
+      const alreadySaved = currentItems.some((item) => item.id === product.id);
+      if (alreadySaved) return currentItems;
+      return [...currentItems, product];
     });
   }
 
   function removeSavedItem(productId: string) {
-    setSavedItems((current) =>
-      current.filter((item) => item.id !== productId)
-    );
+    setSavedItems((currentItems) => currentItems.filter((item) => item.id !== productId));
   }
 
   function moveSavedToCart(product: Product) {
@@ -161,33 +134,29 @@ export function CartProvider({
     removeSavedItem(product.id);
   }
 
-  const cartCount = useMemo(
-    () =>
-      cartItems.reduce(
-        (total, item) => total + item.quantity,
-        0
-      ),
-    [cartItems]
+  function isSaved(productId: string) {
+    return savedItems.some((item) => item.id === productId);
+  }
+
+  function isInCart(productId: string) {
+    return cartItems.some((item) => item.product.id === productId);
+  }
+
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
   );
 
-  const subtotal = useMemo(
-    () =>
-      cartItems.reduce(
-        (total, item) =>
-          total +
-          item.product.price * item.quantity,
-        0
-      ),
-    [cartItems]
-  );
-
-  const total = subtotal;
+  const shipping = 0;
+  const total = subtotal + shipping;
 
   return (
     <CartContext.Provider
       value={{
         cartItems,
         savedItems,
+        subtotal,
+        total,
         addToCart,
         removeFromCart,
         increaseQuantity,
@@ -195,9 +164,8 @@ export function CartProvider({
         saveItem,
         removeSavedItem,
         moveSavedToCart,
-        cartCount,
-        subtotal,
-        total,
+        isSaved,
+        isInCart,
       }}
     >
       {children}
@@ -207,12 +175,8 @@ export function CartProvider({
 
 export function useCart() {
   const context = useContext(CartContext);
-
   if (!context) {
-    throw new Error(
-      "useCart must be used inside CartProvider"
-    );
+    throw new Error("useCart must be used inside CartProvider");
   }
-
   return context;
 }
