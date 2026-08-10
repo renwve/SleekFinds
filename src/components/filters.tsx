@@ -1,9 +1,22 @@
-"Use client";
-import { ChevronDown } from "lucide-react";
+"use client";
 
-export default function Filters() {
+interface FiltersProps {
+  categories?: string[];
+  selectedCategories?: string[];
+  maxPrice?: number;
+  onCategoryChange?: (category: string) => void;
+  onMaxPriceChange?: (price: number) => void;
+}
+
+export default function Filters({
+  categories = ["Furniture", "Clothing", "Electronics", "Books", "Accessories"],
+  selectedCategories = [],
+  maxPrice = 10000,
+  onCategoryChange,
+  onMaxPriceChange,
+}: FiltersProps) {
   return (
-    <aside className="w-72 space-y-8">
+    <aside className="w-full space-y-8 lg:w-72">
       <div>
         <h2 className="mb-6 text-2xl font-semibold text-foreground">Filters</h2>
         <div className="border-b border-border pb-6">
@@ -13,53 +26,30 @@ export default function Filters() {
             title ="range"
               type="range"
               min="0"
-              max="1000"
+              max="10000"
+              step="100"
+              value={maxPrice}
+              onChange={(event) => onMaxPriceChange?.(Number(event.target.value))}
               className="w-full accent-primary"
             />
             <div className="mt-3 flex justify-between text-sm text-muted">
-              <span>$0</span> <span>$1000+</span>
+              <span>$0</span> <span>${maxPrice.toLocaleString()}</span>
             </div>
           </div>
           <div className="border-b border-border py-6">
             <h3 className="mb-4 font-medium text-foreground">Categories </h3>
             <div className="space-y-3 text-sm text-foreground">
-              <label className="flex items-center gap-3">
-                <input type="checkbox" />
-                Furniture
-              </label>
-              <label className="flex items-center gap-3">
-                <input type="checkbox" />
-                Clothing
-              </label>
-              <label className="flex items-center gap-3">
-                <input type="checkbox" />
-                Electronics
-              </label>
-              <label className="flex items-center gap-3">
-                <input type="checkbox" />
-                Books
-              </label>
-              <label className="flex items-center gap-3">
-                <input type="checkbox" />
-                Accessories
-              </label>
+              {categories.map((category) => (
+                <label key={category} className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.includes(category)}
+                    onChange={() => onCategoryChange?.(category)}
+                  />
+                  {category}
+                </label>
+              ))}
             </div>
-          </div>
-          <div className="border-b border-border py-6">
-            <button className="flex w-full items-center justify-between font-medium text-foreground">
-              Condition
-              <ChevronDown size={18} />
-            </button>
-          </div>
-          <div className="border-b border-border py-6">
-            <button className="flex w-full items-center justify-between font-medium text-foreground">
-              Brand <ChevronDown size={18} />
-            </button>
-          </div>
-          <div className="py-6">
-            <button className="flex w-full items-center justify-between font-medium text-foreground">
-              Location <ChevronDown size={18} />
-            </button>
           </div>
         </div>
         <div className="rounded-xl bg-accent p-5 text-accent-foreground">
