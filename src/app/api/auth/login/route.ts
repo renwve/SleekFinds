@@ -47,9 +47,11 @@ import bcrypt from "bcryptjs";
         },
         { status: 200 }
         );
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+
         return NextResponse.json(
-        { error: "Server error: " + error.message },
+        { error: "Server error: " + message },
         { status: 500 }
         );
     }
