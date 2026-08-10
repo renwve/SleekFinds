@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Product from "@/models/Product";
+import { auth } from "@/auth";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -47,6 +48,14 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     if (!mongoose.isValidObjectId(id)) {
@@ -82,6 +91,14 @@ export async function PUT(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const session = await auth();
+    if (session?.user.role !== "admin") {
+      return NextResponse.json(
+        { success: false, error: "Administrator access required" },
+        { status: session?.user ? 403 : 401 },
+      );
+    }
+
     const { id } = await context.params;
 
     if (!mongoose.isValidObjectId(id)) {
