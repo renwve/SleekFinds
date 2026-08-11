@@ -1,42 +1,59 @@
+/**
+ * Author: SleekFinds Development Team
+ * Date: August 11, 2026
+ * Description: Registration page component for creating new SleekFinds user accounts.
+ * Input: Collects registration details including username, email address, and password from form controls.
+ * Processing: Validates fields, sends a POST payload to /api/auth/register, and establishes a user session upon creation.
+ * Output: Dispatches local storage auth events, updates navigation bar state, and navigates users to their profile.
+ */
+
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
-    const router = useRouter();
-    const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-        setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-        try {
-            const res = await fetch("/api/auth/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, email, password }),
-            });
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password }),
+      });
 
-            const data = await res.json();
+      const data = await res.json();
 
-            if (!res.ok) {
-                throw new Error(data.error || "Failed to register");
-            }
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to register");
+      }
 
-        // Redirect to login page on success
-            router.push("/login");
-        }catch(err: unknown){
-            setError(err instanceof Error ? err.message : "Failed to register");
-        }finally{
-            setLoading(false);
-        }
-    };
+      // Automatically store session so navbar and profile update
+      const userSession = {
+        name: username,
+        email: email,
+      };
+      localStorage.setItem("sleekfinds_user", JSON.stringify(userSession));
+      window.dispatchEvent(new Event("storage"));
+
+      // Redirect directly to user profile dashboard
+      router.push("/profile");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to register");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -44,15 +61,13 @@ export default function RegisterPage() {
       <div
         className="relative hidden w-1/2 bg-cover bg-center lg:flex"
         style={{
-          backgroundImage: "url('/src/assets/images/banana.jpg')",
+          backgroundImage: "url('/images/banana.jpg')",
         }}
       >
         <div className="absolute inset-0 bg-black/30" />
 
         <div className="relative flex w-full flex-col justify-between p-12 text-white">
-          <h1 className="text-5xl font-bold tracking-wide">
-            SleekFinds
-          </h1>
+          <h1 className="text-5xl font-bold tracking-wide">SleekFinds</h1>
 
           <div>
             <h2 className="text-5xl font-bold leading-tight">
@@ -69,7 +84,7 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* Right Side */}
+      {/* Right Side Form */}
       <div className="flex w-full items-center justify-center bg-background px-8 lg:w-1/2">
         <div className="w-full max-w-md">
           {/* Tabs */}

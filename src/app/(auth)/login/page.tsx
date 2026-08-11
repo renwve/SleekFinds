@@ -1,3 +1,12 @@
+/**
+ * Author: SleekFinds Development Team
+ * Date: August 11, 2026
+ * Description: Interactive Authentication Page handling Sign In and Account Creation for SleekFinds.
+ * Input: Captures user credentials including full name, email address, and password from controlled form fields.
+ * Processing: Validates user input, toggles between Login and Account Creation views, and submits payload to API routes.
+ * Output: Sets user session state upon successful authentication and redirects users to their dashboard.
+ */
+
 "use client";
 
 import { useState } from "react";
@@ -6,6 +15,10 @@ import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isRegistering, setIsRegistering] = useState(false);
+  
+  // Form State
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,20 +30,47 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+      if (isRegistering) {
+        // Register Call
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
 
-      if (result?.error) {
-        throw new Error("Invalid email or password");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to create account");
+
+        // Automatically log in after register
+        localStorage.setItem("sleekfinds_user", JSON.stringify({ name, email }));
+        window.dispatchEvent(new Event("storage"));
+        router.push("/profile");
+      } else {
+        // Login Attempt using NextAuth primary, direct API secondary
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          // Direct API fallback test
+          const res = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Invalid email or password");
+        }
+
+        // Save session locally for navbar state update
+        localStorage.setItem("sleekfinds_user", JSON.stringify({ email, name: email.split("@")[0] }));
+        window.dispatchEvent(new Event("storage"));
+        router.push("/profile");
       }
-
-      router.push("/");
-      router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to log in");
+      setError(err instanceof Error ? err.message : "Authentication error occurred");
     } finally {
       setLoading(false);
     }
@@ -65,7 +105,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Side */}
+      {/* Right Side Form */}
       <div className="flex w-full items-center justify-center bg-background px-8 lg:w-1/2">
         <div className="w-full max-w-md">
           {/* Tabs */}
@@ -87,10 +127,14 @@ export default function LoginPage() {
           </div>
 
           {/* Heading */}
-          <h2 className="text-4xl font-bold text-foreground">Welcome Back</h2>
+          <h2 className="text-4xl font-bold text-foreground">
+            {isRegistering ? "Join SleekFinds" : "Welcome Back"}
+          </h2>
 
           <p className="mt-2 text-muted">
-            Enter your details to access your curated collection.
+            {isRegistering
+              ? "Create your account to start curating luxury pieces."
+              : "Enter your details to access your curated collection."}
           </p>
 
           {error && (
@@ -100,7 +144,23 @@ export default function LoginPage() {
           )}
 
           {/* Form */}
-          <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+            {isRegistering && (
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Elena Rostova"
+                  className="mt-2 w-full rounded-lg border border-border bg-surface p-3 text-foreground placeholder:text-muted-light outline-none transition focus:border-primary"
+                />
+              </div>
+            )}
+
             <div>
               <label className="text-sm font-medium text-foreground">
                 Email Address
@@ -122,12 +182,14 @@ export default function LoginPage() {
                   Password
                 </label>
 
-                <button
-                  type="button"
-                  className="text-sm text-muted transition hover:text-foreground"
-                >
-                  Forgot?
-                </button>
+                {!isRegistering && (
+                  <button
+                    type="button"
+                    className="text-sm text-muted transition hover:text-foreground"
+                  >
+                    Forgot?
+                  </button>
+                )}
               </div>
 
               <input
@@ -145,7 +207,11 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-lg bg-primary py-3 font-medium text-white transition hover:bg-primary-hover disabled:opacity-50"
             >
-              {loading ? "Signing In..." : "Sign In →"}
+              {loading
+                ? "Processing..."
+                : isRegistering
+                ? "Create Account →"
+                : "Sign In →"}
             </button>
           </form>
         </div>

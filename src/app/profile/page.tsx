@@ -50,10 +50,16 @@ export default function ProfilePage() {
         const response = await fetch("/api/products");
         if (response.ok) {
           const data = await response.json();
-          setListings(data);
+          // SAFELY EXTRACT THE ARRAY:
+          const productsArray = Array.isArray(data) 
+            ? data 
+            : data.products || data.listings || data.data || [];
+            
+          setListings(productsArray);
         }
       } catch (error) {
         console.error("Failed to load listings from MongoDB:", error);
+        setListings([]); // Fallback to empty array on error
       } finally {
         setLoading(false);
       }
@@ -155,9 +161,9 @@ export default function ProfilePage() {
                   Share another piece of your collection with the community.
                 </p>
               </Link>
-
+              
               {/* Render MongoDB Products */}
-              {listings.map((listing) => (
+              {Array.isArray(listings) && listings.map((listing) => (
                 <div
                   key={listing._id}
                   className="overflow-hidden border border-border bg-surface shadow-sm transition hover:shadow-md"
