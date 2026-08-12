@@ -4,10 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, Heart, ArrowRight } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { products } from "@/data/products";
 
-export default function SellsPage() {
+function SellsContent() {
   const searchParams = useSearchParams();
 
   const urlSearch = searchParams.get("search") || "";
@@ -38,39 +38,22 @@ export default function SellsPage() {
         product.details.era.toLowerCase().includes(searchText);
 
       const matchesCondition =
-        condition === "All" ||
-        product.condition === condition;
+        condition === "All" || product.condition === condition;
 
-      const minimum = minPrice
-        ? Number(minPrice)
-        : 0;
+      const minimum = minPrice ? Number(minPrice) : 0;
 
-      const maximum = maxPrice
-        ? Number(maxPrice)
-        : Infinity;
+      const maximum = maxPrice ? Number(maxPrice) : Infinity;
 
       const matchesPrice =
-        product.price >= minimum &&
-        product.price <= maximum;
+        product.price >= minimum && product.price <= maximum;
 
-      const matchesEra =
-        era === "All" ||
-        product.details.era === era;
+      const matchesEra = era === "All" || product.details.era === era;
 
       return (
-        matchesSearch &&
-        matchesCondition &&
-        matchesPrice &&
-        matchesEra
+        matchesSearch && matchesCondition && matchesPrice && matchesEra
       );
     });
-  }, [
-    search,
-    condition,
-    minPrice,
-    maxPrice,
-    era,
-  ]);
+  }, [search, condition, minPrice, maxPrice, era]);
 
   function clearFilters() {
     setCondition("All");
@@ -84,14 +67,11 @@ export default function SellsPage() {
     clearFilters();
   }
 
-  const resultLabel = search.trim()
-    ? `"${search.trim()}"`
-    : "All Finds";
+  const resultLabel = search.trim() ? `"${search.trim()}"` : "All Finds";
 
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-
         {/* Results Header */}
         <div className="mb-8">
           <p className="font-serif text-xs uppercase tracking-[0.2em] text-muted-2">
@@ -99,34 +79,24 @@ export default function SellsPage() {
           </p>
 
           <h1 className="mt-2 font-serif text-3xl font-bold">
-            Results for{" "}
-            <span className="text-primary">
-              {resultLabel}
-            </span>
+            Results for <span className="text-primary">{resultLabel}</span>
           </h1>
 
           <p className="mt-2 font-serif text-sm text-muted">
             Showing {filteredProducts.length} curated{" "}
-            {filteredProducts.length === 1
-              ? "item"
-              : "items"}
+            {filteredProducts.length === 1 ? "item" : "items"}
           </p>
         </div>
 
         {/* Mobile Search */}
         <div className="mb-8 md:hidden">
           <div className="flex items-center rounded-md border border-border bg-surface px-3">
-            <Search
-              size={17}
-              className="text-muted"
-            />
+            <Search size={17} className="text-muted" />
 
             <input
               type="search"
               value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
+              onChange={(event) => setSearch(event.target.value)}
               placeholder="Search finds..."
               aria-label="Search finds"
               className="w-full bg-transparent px-3 py-3 font-serif text-sm outline-none placeholder:text-muted"
@@ -135,13 +105,10 @@ export default function SellsPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[180px_1fr]">
-
           {/* Filters */}
           <aside className="h-fit rounded-lg border border-border bg-surface p-5">
             <div className="flex items-center justify-between">
-              <h2 className="font-serif font-semibold">
-                Filters
-              </h2>
+              <h2 className="font-serif font-semibold">Filters</h2>
 
               <button
                 type="button"
@@ -154,9 +121,7 @@ export default function SellsPage() {
 
             {/* Condition */}
             <div className="mt-7">
-              <p className="font-serif text-xs font-medium">
-                Condition
-              </p>
+              <p className="font-serif text-xs font-medium">Condition</p>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {[
@@ -169,9 +134,7 @@ export default function SellsPage() {
                   <button
                     key={item}
                     type="button"
-                    onClick={() =>
-                      setCondition(item)
-                    }
+                    onClick={() => setCondition(item)}
                     className={`rounded-full border px-3 py-1 font-serif text-xs transition ${
                       condition === item
                         ? "border-primary bg-primary text-white"
@@ -186,18 +149,14 @@ export default function SellsPage() {
 
             {/* Price */}
             <div className="mt-7">
-              <p className="font-serif text-xs font-medium">
-                Price Range
-              </p>
+              <p className="font-serif text-xs font-medium">Price Range</p>
 
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <input
                   type="number"
                   min="0"
                   value={minPrice}
-                  onChange={(event) =>
-                    setMinPrice(event.target.value)
-                  }
+                  onChange={(event) => setMinPrice(event.target.value)}
                   placeholder="Min"
                   className="w-full rounded-md border border-border bg-background px-2 py-2 font-serif text-xs outline-none focus:border-primary"
                 />
@@ -206,9 +165,7 @@ export default function SellsPage() {
                   type="number"
                   min="0"
                   value={maxPrice}
-                  onChange={(event) =>
-                    setMaxPrice(event.target.value)
-                  }
+                  onChange={(event) => setMaxPrice(event.target.value)}
                   placeholder="Max"
                   className="w-full rounded-md border border-border bg-background px-2 py-2 font-serif text-xs outline-none focus:border-primary"
                 />
@@ -217,18 +174,10 @@ export default function SellsPage() {
 
             {/* Era */}
             <div className="mt-7">
-              <p className="font-serif text-xs font-medium">
-                Era
-              </p>
+              <p className="font-serif text-xs font-medium">Era</p>
 
               <div className="mt-3 space-y-2">
-                {[
-                  "All",
-                  "1970s",
-                  "1980s",
-                  "1990s",
-                  "2000s",
-                ].map((item) => (
+                {["All", "1970s", "1980s", "1990s", "2000s"].map((item) => (
                   <label
                     key={item}
                     className="flex cursor-pointer items-center gap-2 font-serif text-xs text-muted"
@@ -238,12 +187,9 @@ export default function SellsPage() {
                       name="era"
                       value={item}
                       checked={era === item}
-                      onChange={() =>
-                        setEra(item)
-                      }
+                      onChange={() => setEra(item)}
                       className="accent-primary"
                     />
-
                     {item}
                   </label>
                 ))}
@@ -255,18 +201,14 @@ export default function SellsPage() {
           <div>
             {filteredProducts.length === 0 ? (
               <div className="rounded-lg border border-border bg-surface p-16 text-center">
-                <Search
-                  size={30}
-                  className="mx-auto text-muted"
-                />
+                <Search size={30} className="mx-auto text-muted" />
 
                 <h2 className="mt-5 font-serif text-xl font-semibold">
                   No finds matched your search
                 </h2>
 
                 <p className="mt-2 font-serif text-sm text-muted">
-                  Try another search or remove some
-                  filters.
+                  Try another search or remove some filters.
                 </p>
 
                 <button
@@ -302,17 +244,13 @@ export default function SellsPage() {
                           className="absolute right-2 top-2 rounded-full bg-surface p-2 text-foreground shadow-sm"
                           aria-label="Wishlist"
                         >
-                          <Heart
-                            size={15}
-                            strokeWidth={1.8}
-                          />
+                          <Heart size={15} strokeWidth={1.8} />
                         </span>
                       </div>
 
                       <div className="p-4">
                         <p className="font-serif text-[10px] uppercase tracking-wide text-muted">
-                          {product.category} ·{" "}
-                          {product.details.era}
+                          {product.category} · {product.details.era}
                         </p>
 
                         <h3 className="mt-1 truncate font-serif text-lg font-semibold">
@@ -321,8 +259,7 @@ export default function SellsPage() {
 
                         <div className="mt-3 flex items-center justify-between">
                           <p className="font-serif font-medium">
-                            $
-                            {product.price.toLocaleString()}
+                            ${product.price.toLocaleString()}
                           </p>
 
                           <span className="flex h-7 w-7 items-center justify-center rounded-full border border-border transition group-hover:bg-primary group-hover:text-white">
@@ -350,5 +287,19 @@ export default function SellsPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function SellsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background text-muted">
+          <p className="font-serif text-sm">Loading finds...</p>
+        </div>
+      }
+    >
+      <SellsContent />
+    </Suspense>
   );
 }

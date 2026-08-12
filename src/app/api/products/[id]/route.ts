@@ -92,10 +92,12 @@ export async function PUT(request: Request, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
     const session = await auth();
-    if (session?.user.role !== "admin") {
+
+    // Requires user to be logged in
+    if (!session?.user) {
       return NextResponse.json(
-        { success: false, error: "Administrator access required" },
-        { status: session?.user ? 403 : 401 },
+        { success: false, error: "Authentication required" },
+        { status: 401 },
       );
     }
 
@@ -106,6 +108,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     }
 
     await connectToDatabase();
+
     const product = await Product.findByIdAndDelete(id);
 
     if (!product) {

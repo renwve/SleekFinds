@@ -13,6 +13,7 @@ import {
   X,
   Save,
   User as UserIcon,
+  Trash2
 } from "lucide-react";
 
 interface Listing {
@@ -127,6 +128,37 @@ export default function ProfilePage() {
     }
 
     setIsEditing(false);
+  };
+
+  // Track loading state for deletion
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Delete Handler Function
+  const handleDeleteListing = async (id: string) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this listing? This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    setDeletingId(id);
+
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        // Remove item locally from state immediately
+        setListings((prev) => prev.filter((item) => item._id !== id));
+      } else {
+        alert("Failed to delete the listing. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting listing:", error);
+      alert("An error occurred while deleting.");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -272,13 +304,25 @@ export default function ProfilePage() {
                       {listing.condition || "Excellent"}
                     </span>
 
-                    <button
-                      type="button"
-                      aria-label={`Edit ${listing.title}`}
-                      className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-foreground opacity-0 shadow-sm backdrop-blur-sm transition group-hover:opacity-100 hover:text-primary"
-                    >
-                      <Pencil size={13} />
-                    </button>
+                    <div className="absolute right-3 top-3 flex items-center gap-1.5 opacity-0 transition group-hover:opacity-100 z-10">
+                      <Link
+                        href={`/products/edit/${listing._id}`}
+                        aria-label={`Edit ${listing.title}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm backdrop-blur-sm transition hover:text-primary"
+                      >
+                        <Pencil size={13} />
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteListing(listing._id)}
+                        disabled={deletingId === listing._id}
+                        aria-label={`Delete ${listing.title}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-red-500 shadow-sm backdrop-blur-sm hover:bg-red-50 hover:text-red-600 transition disabled:opacity-50"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="p-5">
