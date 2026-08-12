@@ -2,20 +2,13 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Search,
-  Heart,
-  ShoppingBag,
-  MessageSquare,
-  User,
-  LogOut,
-} from "lucide-react";
+import { Search, Heart, ShoppingBag, User, MessageSquare } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-
   const [search, setSearch] = useState("");
   const [user, setUser] = useState<{
     email: string;
@@ -165,45 +158,6 @@ export default function Navbar() {
             <MessageSquare size={18} />
             <span>Messages</span>
           </Link>
-
-          {/* User */}
-          {user ? (
-            <div className="flex items-center gap-3 border-l border-border pl-4">
-              <Link
-                href="/profile"
-                aria-label="Profile"
-                className={`flex items-center gap-2 transition hover:text-foreground ${
-                  isProfilePage ? "text-primary" : ""
-                }`}
-              >
-                <User
-                  size={19}
-                  fill={isProfilePage ? "currentColor" : "none"}
-                />
-
-                <span className="hidden font-serif text-xs font-medium md:inline">
-                  {user.name || user.email.split("@")[0]}
-                </span>
-              </Link>
-
-              <button
-                type="button"
-                onClick={handleSignOut}
-                title="Sign Out"
-                aria-label="Sign Out"
-                className="text-muted transition hover:text-red-500"
-              >
-                <LogOut size={17} />
-              </button>
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              className="rounded bg-primary px-3 py-1.5 font-serif text-xs font-medium text-white transition hover:bg-primary-hover"
-            >
-              Sign In
-            </Link>
-          )}
         </div>
       </div>
     </nav>
