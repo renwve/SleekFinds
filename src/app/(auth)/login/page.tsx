@@ -12,11 +12,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
   const [isRegistering, setIsRegistering] = useState(false);
-  
+
   // Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,16 +35,27 @@ export default function LoginPage() {
         // Register Call
         const res = await fetch("/api/auth/register", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ name, email, password }),
         });
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to create account");
+
+        if (!res.ok) {
+          throw new Error(
+            data.error || "Failed to create account"
+          );
+        }
 
         // Automatically log in after register
-        localStorage.setItem("sleekfinds_user", JSON.stringify({ name, email }));
+        localStorage.setItem(
+          "sleekfinds_user",
+          JSON.stringify({ name, email })
+        );
         window.dispatchEvent(new Event("storage"));
+
         router.push("/profile");
       } else {
         // Login Attempt using NextAuth primary, direct API secondary
@@ -57,20 +69,37 @@ export default function LoginPage() {
           // Direct API fallback test
           const res = await fetch("/api/auth/login", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({ email, password }),
           });
+
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Invalid email or password");
+
+          if (!res.ok) {
+            throw new Error(
+              data.error || "Invalid email or password"
+            );
+          }
         }
 
         // Save session locally for navbar state update
-        localStorage.setItem("sleekfinds_user", JSON.stringify({ email, name: email.split("@")[0] }));
+        localStorage.setItem(
+          "sleekfinds_user",
+          JSON.stringify({
+            email,
+            name: email.split("@")[0],
+          })
+        );
         window.dispatchEvent(new Event("storage"));
+
         router.push("/profile");
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Authentication error occurred");
+      setError(
+        err instanceof Error ? err.message : "Authentication error occurred"
+      );
     } finally {
       setLoading(false);
     }
@@ -82,24 +111,23 @@ export default function LoginPage() {
       <div
         className="relative hidden w-1/2 bg-cover bg-center lg:flex"
         style={{
-          backgroundImage: "url('/images/banana.jpg')",
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=80')",
         }}
       >
         <div className="absolute inset-0 bg-black/30" />
-
         <div className="relative flex w-full flex-col justify-between p-12 text-white">
-          <h1 className="text-5xl font-bold tracking-wide">SleekFinds</h1>
-
+          <h1 className="text-5xl font-bold tracking-wide">
+            SleekFinds
+          </h1>
           <div>
             <h2 className="text-5xl font-bold leading-tight">
-              Curated Heritage
-              <br />
+              Curated Heritage <br />
               for the Conscious Collector.
             </h2>
-
             <p className="mt-5 max-w-md text-lg text-gray-200">
-              Join our community of enthusiasts preserving craftsmanship through
-              sustainable second-hand luxury.
+              Join our community of enthusiasts preserving craftsmanship
+              through sustainable second-hand luxury.
             </p>
           </div>
         </div>
@@ -116,21 +144,18 @@ export default function LoginPage() {
             >
               Sign In
             </button>
-
-            <button
-              type="button"
-              onClick={() => router.push("/register")}
+            <Link
+              href="/register"
               className="pb-2 text-muted transition hover:text-foreground"
             >
               Create Account
-            </button>
+            </Link>
           </div>
 
           {/* Heading */}
           <h2 className="text-4xl font-bold text-foreground">
             {isRegistering ? "Join SleekFinds" : "Welcome Back"}
           </h2>
-
           <p className="mt-2 text-muted">
             {isRegistering
               ? "Create your account to start curating luxury pieces."
@@ -138,7 +163,7 @@ export default function LoginPage() {
           </p>
 
           {error && (
-            <div className="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20">
+            <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500">
               {error}
             </div>
           )}
@@ -165,7 +190,6 @@ export default function LoginPage() {
               <label className="text-sm font-medium text-foreground">
                 Email Address
               </label>
-
               <input
                 type="email"
                 required
@@ -181,7 +205,6 @@ export default function LoginPage() {
                 <label className="text-sm font-medium text-foreground">
                   Password
                 </label>
-
                 {!isRegistering && (
                   <button
                     type="button"
@@ -191,7 +214,6 @@ export default function LoginPage() {
                   </button>
                 )}
               </div>
-
               <input
                 type="password"
                 required
