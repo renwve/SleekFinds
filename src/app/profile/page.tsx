@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -9,6 +9,10 @@ import {
   MoreHorizontal,
   ArrowRight,
   Plus,
+  Camera,
+  X,
+  Save,
+  User as UserIcon,
 } from "lucide-react";
 
 interface Listing {
@@ -26,6 +30,8 @@ interface UserProfile {
   name: string;
   email: string;
   bio?: string;
+  location?: string;
+  avatarUrl?: string;
   memberSince?: string;
 }
 
@@ -34,14 +40,33 @@ export default function ProfilePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Edit Modal State
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<UserProfile>({
+    name: "",
+    email: "",
+    bio: "",
+    location: "",
+    avatarUrl: "",
+  });
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const response = await fetch("/api/auth/me");
-
         if (response.ok) {
           const data = await response.json();
-          setUser(data.user || data);
+          const userData = data.user || data;
+          setUser(userData);
+          setFormData(userData);
+        } else {
+          // Fallback to localStorage if API is not implemented yet
+          const stored = localStorage.getItem("sleekfinds_user");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            setUser(parsed);
+            setFormData(parsed);
+          }
         }
       } catch (error) {
         console.error("Failed to load authenticated user:", error);
@@ -51,14 +76,11 @@ export default function ProfilePage() {
     const fetchUserListings = async () => {
       try {
         const response = await fetch("/api/products");
-
         if (response.ok) {
           const data = await response.json();
-
           const productsArray = Array.isArray(data)
             ? data
             : data.products || data.listings || data.data || [];
-
           setListings(productsArray);
         }
       } catch (error) {
@@ -73,6 +95,40 @@ export default function ProfilePage() {
     fetchUserListings();
   }, []);
 
+  // Handle Avatar Image Upload
+  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({
+          ...prev,
+          avatarUrl: reader.result as string,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Save Profile Changes
+  const handleSaveProfile = async (e: FormEvent) => {
+    e.preventDefault();
+    setUser(formData);
+    localStorage.setItem("sleekfinds_user", JSON.stringify(formData));
+
+    try {
+      await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+    } catch (err) {
+      console.warn("API update skipped, updated locally instead.");
+    }
+
+    setIsEditing(false);
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
@@ -83,13 +139,21 @@ export default function ProfilePage() {
           <div className="px-6 pb-7 sm:px-8">
             <div className="-mt-12 flex flex-col gap-6 sm:-mt-14 md:flex-row md:items-end md:justify-between">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                {/* Avatar */}
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-surface bg-background shadow-md sm:h-28 sm:w-28">
-                  <span className="font-serif text-3xl font-semibold text-primary">
-                    {user?.name
-                      ? user.name.substring(0, 2).toUpperCase()
-                      : "SF"}
-                  </span>
+                {/* Avatar Display */}
+                <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-surface bg-background shadow-md sm:h-28 sm:w-28">
+                  {user?.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name || "User Avatar"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-serif text-3xl font-semibold text-primary">
+                      {user?.name
+                        ? user.name.substring(0, 2).toUpperCase()
+                        : "SF"}
+                    </span>
+                  )}
                 </div>
 
                 {/* User Information */}
@@ -99,9 +163,7 @@ export default function ProfilePage() {
                   </h1>
 
                   {user?.email && (
-                    <p className="mt-1 text-sm text-muted">
-                      {user.email}
-                    </p>
+                    <p className="mt-1 text-sm text-muted">{user.email}</p>
                   )}
 
                   <p className="mt-3 max-w-xl font-serif text-sm leading-6 text-muted">
@@ -115,17 +177,10 @@ export default function ProfilePage() {
               <div className="flex gap-2">
                 <button
                   type="button"
+                  onClick={() => setIsEditing(true)}
                   className="rounded-lg border border-border bg-background px-5 py-2.5 font-serif text-xs font-medium text-foreground transition hover:bg-surface-2"
                 >
                   Edit Profile
-                </button>
-
-                <button
-                  type="button"
-                  aria-label="More profile options"
-                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background text-foreground transition hover:bg-surface-2"
-                >
-                  <MoreHorizontal size={17} />
                 </button>
               </div>
             </div>
@@ -162,18 +217,16 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* Active Listings */}
+        {/* Active Listings Section */}
         <section className="py-10">
           <div className="mb-6 flex items-end justify-between">
             <div>
               <p className="font-serif text-[10px] uppercase tracking-[0.2em] text-primary">
                 Your Collection
               </p>
-
               <h2 className="mt-1 font-serif text-2xl font-semibold text-foreground">
                 Active Listings
               </h2>
-
               <p className="mt-1 font-serif text-xs text-muted">
                 Your current listings from MongoDB.
               </p>
@@ -201,7 +254,6 @@ export default function ProfilePage() {
                   key={listing._id}
                   className="group overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
-                  {/* Product Image */}
                   <div className="relative aspect-[4/3] overflow-hidden bg-surface-2">
                     {listing.imageUrl ? (
                       <Image
@@ -229,19 +281,16 @@ export default function ProfilePage() {
                     </button>
                   </div>
 
-                  {/* Product Details */}
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-serif text-[9px] uppercase tracking-wider text-muted">
                           {listing.category}
                         </p>
-
                         <h3 className="mt-1 truncate font-serif text-base font-semibold text-foreground">
                           {listing.title}
                         </h3>
                       </div>
-
                       <span className="shrink-0 font-serif text-sm font-semibold text-primary">
                         ${listing.price.toLocaleString()}
                       </span>
@@ -256,7 +305,6 @@ export default function ProfilePage() {
                         <Eye size={11} />
                         {listing.views || 0} Views
                       </span>
-
                       <span>{listing.condition}</span>
                     </div>
                   </div>
@@ -268,15 +316,12 @@ export default function ProfilePage() {
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 text-primary">
                 <Plus size={22} />
               </div>
-
               <p className="mt-5 font-serif text-xl font-semibold text-foreground">
                 Your collection is waiting.
               </p>
-
               <p className="mx-auto mt-2 max-w-md font-serif text-xs leading-5 text-muted">
                 Add your first listing to start selling on SleekFinds.
               </p>
-
               <Link
                 href="/add-listing"
                 className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-serif text-xs font-medium text-white transition hover:bg-primary-hover"
@@ -295,12 +340,10 @@ export default function ProfilePage() {
               <h2 className="font-serif text-lg font-semibold text-foreground">
                 Drafts
               </h2>
-
               <p className="mt-1 font-serif text-xs text-muted">
                 Unfinished listings you've started creating.
               </p>
             </div>
-
             <span className="rounded-full bg-surface-2 px-3 py-1 font-serif text-[10px] text-muted">
               0
             </span>
@@ -311,6 +354,126 @@ export default function ProfilePage() {
           </div>
         </section>
       </div>
+
+      {/* Edit Profile Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-xl">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <h2 className="font-serif text-xl font-semibold text-foreground">
+                Edit Profile
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="text-muted hover:text-foreground"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="mt-6 space-y-5">
+              {/* Avatar Upload */}
+              <div className="flex items-center gap-4">
+                <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-border bg-surface-2">
+                  {formData.avatarUrl ? (
+                    <img
+                      src={formData.avatarUrl}
+                      alt="Avatar Preview"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon size={32} className="text-muted" />
+                  )}
+                  <label
+                    htmlFor="avatar-modal-upload"
+                    className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/40 text-white opacity-0 transition hover:opacity-100"
+                  >
+                    <Camera size={20} />
+                  </label>
+                  <input
+                    id="avatar-modal-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </div>
+                <div>
+                  <p className="font-serif text-xs font-semibold text-foreground">
+                    Profile Picture
+                  </p>
+                  <p className="text-[11px] text-muted">
+                    Click image to change your avatar.
+                  </p>
+                </div>
+              </div>
+
+              {/* Display Name */}
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.name || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:border-primary"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={formData.email || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:border-primary"
+                />
+              </div>
+
+              {/* Bio */}
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">
+                  Bio
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.bio || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, bio: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-border bg-background p-2.5 text-xs text-foreground outline-none focus:border-primary"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="rounded-lg border border-border bg-background px-4 py-2 font-serif text-xs font-medium text-foreground hover:bg-surface-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 font-serif text-xs font-medium text-white hover:bg-primary-hover"
+                >
+                  <Save size={14} /> Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
