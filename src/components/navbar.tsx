@@ -2,12 +2,14 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { Search, Heart, ShoppingBag, User } from "lucide-react";
+import { Search, Heart, ShoppingBag, User, LogIn, LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { status } = useSession();
   const [search, setSearch] = useState("");
 
   function handleSearch(event: FormEvent) {
@@ -80,6 +82,26 @@ export default function Navbar() {
           >
             <User size={19} fill={isProfilePage ? "currentColor" : "none"} />
           </Link>
+          {status === "authenticated" ? (
+            <button
+              type="button"
+              aria-label="Sign out"
+              title="Sign out"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="transition hover:text-foreground"
+            >
+              <LogOut size={19} />
+            </button>
+          ) : status === "unauthenticated" ? (
+            <Link
+              href="/login"
+              aria-label="Sign in"
+              title="Sign in"
+              className="transition hover:text-foreground"
+            >
+              <LogIn size={19} />
+            </Link>
+          ) : null}
         </div>
       </div>
     </nav>
