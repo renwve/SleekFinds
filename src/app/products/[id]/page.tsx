@@ -111,13 +111,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   <p className="font-serif font-semibold">{product.seller}</p>
                   <p className="mt-1 font-serif text-sm text-muted">{product.location}</p>
                 </div>
-                <button
-                  type="button"
+                <Link
+                  href={`/messages?seller=${encodeURIComponent(product.seller)}&item=${encodeURIComponent(product.name)}&id=${product.id}`}
                   className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 font-serif text-sm font-medium transition hover:bg-surface-secondary"
                 >
                   <MessageCircle size={16} />
                   Message Seller
-                </button>
+                </Link>
               </div>
             </div>
           </div>
