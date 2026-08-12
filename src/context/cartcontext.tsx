@@ -22,13 +22,16 @@ interface CartContextType {
   savedItems: Product[];
   subtotal: number;
   total: number;
+
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   increaseQuantity: (productId: string) => void;
   decreaseQuantity: (productId: string) => void;
+
   saveItem: (product: Product) => void;
   removeSavedItem: (productId: string) => void;
   moveSavedToCart: (product: Product) => void;
+
   isSaved: (productId: string) => boolean;
   isInCart: (productId: string) => boolean;
 }
@@ -40,6 +43,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [savedItems, setSavedItems] = useState<Product[]>([]);
   const [loaded, setLoaded] = useState(false);
 
+  // Load cart + saved items from browser storage
   useEffect(() => {
     try {
       const storedCart = localStorage.getItem(CART_STORAGE_KEY);
@@ -47,6 +51,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (storedCart) {
         const parsedCart = JSON.parse(storedCart);
+
         if (Array.isArray(parsedCart)) {
           setCartItems(parsedCart);
         }
@@ -54,55 +59,94 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (storedSaved) {
         const parsedSaved = JSON.parse(storedSaved);
+
         if (Array.isArray(parsedSaved)) {
           setSavedItems(parsedSaved);
         }
       }
     } catch (error) {
-      console.error("Failed to load cart data from localStorage:", error);
+      console.error("Failed to load cart data:", error);
     } finally {
       setLoaded(true);
     }
   }, []);
 
+  // Persist cart
   useEffect(() => {
     if (!loaded) return;
+
     try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+      localStorage.setItem(
+        CART_STORAGE_KEY,
+        JSON.stringify(cartItems)
+      );
     } catch (error) {
-      console.error("Failed to save cart to localStorage:", error);
+      console.error("Failed to save cart:", error);
     }
   }, [cartItems, loaded]);
 
+  // Persist saved items
   useEffect(() => {
     if (!loaded) return;
+
     try {
-      localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(savedItems));
+      localStorage.setItem(
+        SAVED_STORAGE_KEY,
+        JSON.stringify(savedItems)
+      );
     } catch (error) {
-      console.error("Failed to save wishlist to localStorage:", error);
+      console.error("Failed to save saved items:", error);
     }
   }, [savedItems, loaded]);
 
+  // -------------------------
+  // CART
+  // -------------------------
+
   function addToCart(product: Product) {
     setCartItems((currentItems) => {
-      const existingItem = currentItems.find((item) => item.product.id === product.id);
+      const existingItem = currentItems.find(
+        (item) => item.product.id === product.id
+      );
+
       if (existingItem) {
         return currentItems.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.product.id === product.id
+            ? {
+                ...item,
+                quantity: item.quantity + 1,
+              }
+            : item
         );
       }
-      return [...currentItems, { product, quantity: 1 }];
+
+      return [
+        ...currentItems,
+        {
+          product,
+          quantity: 1,
+        },
+      ];
     });
   }
 
   function removeFromCart(productId: string) {
-    setCartItems((currentItems) => currentItems.filter((item) => item.product.id !== productId));
+    setCartItems((currentItems) =>
+      currentItems.filter(
+        (item) => item.product.id !== productId
+      )
+    );
   }
 
   function increaseQuantity(productId: string) {
     setCartItems((currentItems) =>
       currentItems.map((item) =>
-        item.product.id === productId ? { ...item, quantity: item.quantity + 1 } : item
+        item.product.id === productId
+          ? {
+              ...item,
+              quantity: item.quantity + 1,
+            }
+          : item
       )
     );
   }
@@ -111,22 +155,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCartItems((currentItems) =>
       currentItems
         .map((item) =>
-          item.product.id === productId ? { ...item, quantity: item.quantity - 1 } : item
+          item.product.id === productId
+            ? {
+                ...item,
+                quantity: item.quantity - 1,
+              }
+            : item
         )
         .filter((item) => item.quantity > 0)
     );
   }
 
+  // -------------------------
+  // SAVED ITEMS / WISHLIST
+  // -------------------------
+
   function saveItem(product: Product) {
     setSavedItems((currentItems) => {
-      const alreadySaved = currentItems.some((item) => item.id === product.id);
-      if (alreadySaved) return currentItems;
+      const alreadySaved = currentItems.some(
+        (item) => item.id === product.id
+      );
+
+      if (alreadySaved) {
+        return currentItems;
+      }
+
       return [...currentItems, product];
     });
   }
 
   function removeSavedItem(productId: string) {
-    setSavedItems((currentItems) => currentItems.filter((item) => item.id !== productId));
+    setSavedItems((currentItems) =>
+      currentItems.filter(
+        (item) => item.id !== productId
+      )
+    );
   }
 
   function moveSavedToCart(product: Product) {
@@ -135,15 +198,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   function isSaved(productId: string) {
-    return savedItems.some((item) => item.id === productId);
+    return savedItems.some(
+      (item) => item.id === productId
+    );
   }
 
   function isInCart(productId: string) {
-    return cartItems.some((item) => item.product.id === productId);
+    return cartItems.some(
+      (item) => item.product.id === productId
+    );
   }
 
+  // -------------------------
+  // TOTALS
+  // -------------------------
+
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) =>
+      sum + item.product.price * item.quantity,
     0
   );
 
@@ -157,13 +229,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         savedItems,
         subtotal,
         total,
+
         addToCart,
         removeFromCart,
         increaseQuantity,
         decreaseQuantity,
+
         saveItem,
         removeSavedItem,
         moveSavedToCart,
+
         isSaved,
         isInCart,
       }}
@@ -175,8 +250,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext);
+
   if (!context) {
-    throw new Error("useCart must be used inside CartProvider");
+    throw new Error(
+      "useCart must be used inside CartProvider"
+    );
   }
+
   return context;
 }

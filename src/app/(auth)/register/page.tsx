@@ -1,42 +1,68 @@
+/**
+ * Author: SleekFinds Development Team
+ * Date: August 11, 2026
+ * Description: Registration page component for creating new SleekFinds user accounts.
+ * Input: Collects registration details including username, email address, and password from form controls.
+ * Processing: Validates fields, sends a POST payload to /api/auth/register, and establishes a user session upon creation.
+ * Output: Dispatches local storage auth events, updates navigation bar state, and navigates users to their profile.
+ */
+
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function RegisterPage() {
-    const router = useRouter();
-    const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-        setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-        try {
-            const res = await fetch("/api/auth/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, email, password }),
-            });
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, email, password }),
+      });
 
-            const data = await res.json();
+      const data = await res.json();
 
-            if (!res.ok) {
-                throw new Error(data.error || "Failed to register");
-            }
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to register");
+      }
 
-        // Redirect to login page on success
-            router.push("/login");
-        }catch(err: unknown){
-            setError(err instanceof Error ? err.message : "Failed to register");
-        }finally{
-            setLoading(false);
-        }
-    };
+      // Automatically store session so navbar and profile update
+      const userSession = {
+        name: username,
+        email: email,
+      };
+
+      localStorage.setItem(
+        "sleekfinds_user",
+        JSON.stringify(userSession)
+      );
+      window.dispatchEvent(new Event("storage"));
+
+      // Redirect directly to user profile dashboard
+      router.push("/profile");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to register"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -44,23 +70,20 @@ export default function RegisterPage() {
       <div
         className="relative hidden w-1/2 bg-cover bg-center lg:flex"
         style={{
-          backgroundImage: "url('/src/assets/images/banana.jpg')",
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1200&q=80')",
         }}
       >
         <div className="absolute inset-0 bg-black/30" />
-
         <div className="relative flex w-full flex-col justify-between p-12 text-white">
           <h1 className="text-5xl font-bold tracking-wide">
             SleekFinds
           </h1>
-
           <div>
             <h2 className="text-5xl font-bold leading-tight">
-              Discover
-              <br />
+              Discover <br />
               Timeless Finds.
             </h2>
-
             <p className="mt-5 max-w-md text-lg text-gray-200">
               Create your account and start buying and selling quality
               second-hand items.
@@ -69,19 +92,17 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* Right Side */}
+      {/* Right Side Form */}
       <div className="flex w-full items-center justify-center bg-background px-8 lg:w-1/2">
         <div className="w-full max-w-md">
           {/* Tabs */}
           <div className="mb-12 flex gap-8 border-b border-border pb-4">
-            <button
-              type="button"
-              onClick={() => router.push("/login")}
+            <Link
+              href="/login"
               className="pb-2 text-muted transition hover:text-foreground"
             >
               Sign In
-            </button>
-
+            </Link>
             <button
               type="button"
               className="border-b-2 border-primary pb-2 font-semibold text-foreground"
@@ -94,13 +115,12 @@ export default function RegisterPage() {
           <h2 className="text-4xl font-bold text-foreground">
             Create Account
           </h2>
-
           <p className="mt-2 text-muted">
             Join the SleekFinds community today.
           </p>
 
           {error && (
-            <div className="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20">
+            <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500">
               {error}
             </div>
           )}
@@ -111,7 +131,6 @@ export default function RegisterPage() {
               <label className="mb-2 block text-sm font-medium text-foreground">
                 Username
               </label>
-
               <input
                 type="text"
                 required
@@ -126,7 +145,6 @@ export default function RegisterPage() {
               <label className="mb-2 block text-sm font-medium text-foreground">
                 Email Address
               </label>
-
               <input
                 type="email"
                 required
@@ -141,7 +159,6 @@ export default function RegisterPage() {
               <label className="mb-2 block text-sm font-medium text-foreground">
                 Password
               </label>
-
               <input
                 type="password"
                 required
