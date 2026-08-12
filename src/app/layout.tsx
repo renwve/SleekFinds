@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { CartProvider } from "@/context/cartcontext";
-import AuthProvider from "@/components/authProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,13 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="font-serif">
       <body>
-        <AuthProvider>
-          <CartProvider>
-            <Navbar />
-            {children}
-            <Footer />
-          </CartProvider>
-        </AuthProvider>
+        <CartProvider>
+          <Navbar />
+          {children}
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );
