@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Heart, ShoppingBag, User, LogOut } from "lucide-react";
+import { Search, Heart, ShoppingBag, MessageSquare, User, LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 export default function Navbar() {
@@ -89,7 +89,7 @@ export default function Navbar() {
           >
             <Search size={19} />
           </button>
-
+          
           <Link
             href="/saved"
             aria-label="Saved items"
@@ -106,6 +106,13 @@ export default function Navbar() {
             <ShoppingBag size={19} />
           </Link>
 
+          <Link
+            href="/messages"
+            className="flex items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-primary"
+          >
+            <MessageSquare size={18} />
+            <span>Messages</span>
+          </Link>
           {/* Dynamic User Profile / Sign In Button */}
           {user ? (
             <div className="flex items-center gap-3 border-l border-border pl-4">
